@@ -21,6 +21,7 @@ server <- function(input, output, session) {
   reactiveResults <- reactiveVal()
   reactiveDone <- reactiveVal()
   output$downloadButton <- NULL
+  output$ProgressBar <- NULL
   lastTrial <- NULL
 
   loopTrials <- ExtendedTask$new(function(TRIAL) {
@@ -66,6 +67,7 @@ server <- function(input, output, session) {
     
     for(Row in RowIDs)
     {
+      cat ("Working on row: ", Row, "\n")
       ROWS <- data[data$ROW == Row,]
       # Greater than 1 line?
       if (nrow(ROWS) > 1)
@@ -74,14 +76,20 @@ server <- function(input, output, session) {
         if (all(!is.na(ROWS$N)))
         {
           COLS <- nrow(ROWS)
-          Meanmean <- sum(ROWS$N*ROWS$MEAN) / sum(ROWS$N)
+          N <- sum(ROWS$N)
+          Meanmean <- sum(ROWS$N*ROWS$MEAN) / N
           # The calculation of Meanvar is OK. SD^2 is an unbiased estimate
           # of variance
-          Meanvar <-  sum(ROWS$N*ROWS$SD^2) / sum(ROWS$N)
+          Meanvar <-  sum(ROWS$N*ROWS$SD^2) / N
 
           # However, this next calculatiion is biased. s.u. will correct it
-          Meansd <- s.u(sqrt(Meanvar), sum(ROWS$N))
-          # Meansd <- sqrt(Meanvar)
+          # If N > 30, then the correction is < 1 %. It blows up if N > 343! 
+          if (N < 30)
+          {
+            Meansd <- s.u(sqrt(Meanvar), N)
+          } else {
+            Meansd <- sqrt(Meanvar)
+          }
           SEMsample <- Meansd/sqrt(mean(ROWS$N))
           DiffSample <- sum((ROWS$MEAN - Meanmean)^2) # Squared difference of column means
   
@@ -143,6 +151,21 @@ server <- function(input, output, session) {
     }
     P <- P * 2
     DATA$P[DATA$TRIAL == TRIAL & DATA$ROW == "OVERALL P"] <<- signif(P,4)
+    
+    # Additional assessment of fabricated values
+    test.vector <- c(unlist(data$MEAN), unlist(data$SD))
+    test.vector <- test.vector[!is.na(test.vector)]
+    
+    # Benford's law test
+    DATA$P[DATA$TRIAL == TRIAL & DATA$ROW == "Benford P"] <<- signif(
+      distr.test(test.vector, check = 'first', reference = 'benford')$p.value,
+      4)
+    
+    # Repeated digits test
+    DATA$P[DATA$TRIAL == TRIAL & DATA$ROW == "Repeats P"] <<- signif(
+      rv.test(test.vector, B = 2000)$p.value,
+      4)
+
     cat(paste0("Trial ", TRIAL,": p = ",round(P, 3), "\n"))
     if (TRIAL == lastTrial) reactiveDone(TRUE)
     return(P)
@@ -279,22 +302,31 @@ server <- function(input, output, session) {
       postMessage("Missing column labeled SD")
       FAIL <- TRUE
     }
-      
+    
+    # Add rounding column for the mean  
     MeanColumns <- grep("MEAN", ColumnNames)
     RoundMeanColumn <- which(ColumnNames[MeanColumns] != "MEAN")
-    if (length(RoundMeanColumn) == 0)
+    if (length(RoundMeanColumn) > 0)
     {
-      if (is.null(DATA$ROUND_MEAN))
+      names(DATA)[MeanColumns[RoundMeanColumn[1]]] <- "ROUND_MEAN"
+      ColumnNames <- names(DATA)
+    } else {
+      if (!is.null(DATA$ROUND))
       {
-        if (is.null(DATA$ROUND_OBSERVATION))
+        names(DATA)[names(DATA) == "ROUND"] <- "ROUND_MEAN"
+      } else {
+        ObservationColumns <- grep("OBS", ColumnNames)
+        if (length(ObservationColumns) > 0)
         {
-          DATA$ROUND_MEAN <- 0
-        } else {
+          names(DATA)[ObservationColumns[1]] <- "ROUND_OBSERVATION"
           DATA$ROUND_MEAN <- DATA$ROUND_OBSERVATION
         }
       }
-    } else {
-      names(DATA)[MeanColumns[RoundMeanColumn]] <- "ROUND_MEAN"
+    }
+    # After all of that, if it still doesn't exist, just put in 0
+    if (is.null(DATA$ROUND_MEAN))
+    {
+      DATA$ROUND_MEAN <- 0
     }
     ColumnNames <- names(DATA)
       
@@ -398,13 +430,23 @@ server <- function(input, output, session) {
 
     pDATA <- DATA[1:length(TRIALS),]
     pDATA[,] <- NA
-    blankDATA <- pDATA
-    blankDATA$TRIAL <- pDATA$TRIAL <- TRIALS
+    blankDATA <- benfordDATA <- rvDATA <- pDATA
+    blankDATA$TRIAL <- pDATA$TRIAL <- benfordDATA$TRIAL <- rvDATA$TRIAL <- TRIALS
+    
     pDATA$ROW <- "OVERALL P"
-    pDATA$SEQ <- 999999
+    pDATA$SEQ <- 999997
+    
+    # Benford's law
+    benfordDATA$ROW <- "Benford P"
+    benfordDATA$SEQ <- 999998
+    
+    # Repeated digits
+    rvDATA$ROW <- "Repeats P"
+    rvDATA$SEQ <- 999999
+    
     blankDATA$SEQ <- 1000000
     
-    DATA <- rbind(DATA, pDATA, blankDATA)
+    DATA <- rbind(DATA, pDATA, benfordDATA, rvDATA, blankDATA)
     DATA <- DATA[order(DATA$TRIAL, DATA$SEQ),]
     DATA$TRIAL[DATA$SEQ == 1000000] <- ""
     DATA <- DATA[-nrow(DATA),]
@@ -427,13 +469,35 @@ server <- function(input, output, session) {
       reactiveDataValidated()
     },
     {
+      LengthTrials <- length(TRIALS)
+      
+      # output$ProgressBar <- renderUI({
+      #   progressBar(
+      #   id = "pb",
+      #   value = 0,
+      #   total = LengthTrials,
+      #   title = "",
+      #   display_pct = FALSE
+      # )
+      # })
+      # 
+      
       start_time <- Sys.time()
       DATA <<- reactiveDataValidated()
       # Set up results array
 
       # Main Processing Loop
-      for (TRIAL in TRIALS)
+      for (i in 1:LengthTrials)
       {
+        TRIAL <- TRIALS[i]
+        # updateProgressBar(
+        #   session = session,
+        #   id = "pb",
+        #   value = i, total = LengthTrials,
+        #   title = paste("Trial:", TRIAL)
+        # )
+        # Sys.sleep(0.1)
+        cat("Working on trial: ", TRIAL, "\n")
         P_Calc(TRIAL)
         #loopTrials$invoke(TRIAL)
       }
@@ -468,9 +532,18 @@ server <- function(input, output, session) {
       write.xlsx(DATA, file)
     })
 
-    output$template <- downloadHandler(
+  output$documentation <- downloadHandler(
     filename = function() {
-      paste0("Template for Integrity Analysis.xlsx")
+      "IntegrityAnalysis.docx"
+    },
+    content = function(file) {
+      file.copy("IntegrityAnalysis.docx", file)
+    })
+  
+  
+  output$template <- downloadHandler(
+    filename = function() {
+      "Template for Integrity Analysis.xlsx"
     },
     content = function(file) {
       write.xlsx(read.xlsx("Template.xlsx"), file)
@@ -479,7 +552,7 @@ server <- function(input, output, session) {
     
     output$example <- downloadHandler(
     filename = function() {
-      paste0("Example for Integrity Analysis.xlsx")
+      "Example for Integrity Analysis.xlsx"
     },
     content = function(file) {
       write.xlsx(read.xlsx("Example.xlsx"), file)

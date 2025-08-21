@@ -54,7 +54,8 @@ ui <- fluidPage(
         N<br>
         MEAN<br>
         SD<br>
-        ROUND</div>"
+        ROUND MEAN<br>
+        ROUND OBS</div>"
         )
     ),
     column(
@@ -68,6 +69,7 @@ ui <- fluidPage(
         integer<br>
         floating<br>
         floating<br>
+        integer<br>
         integer</div>"
       )
     ),
@@ -82,6 +84,7 @@ ui <- fluidPage(
         Yes<br>
         Yes<br>
         Yes<br>
+        No<br>
         No</div>"
       )
     ),
@@ -96,7 +99,8 @@ ui <- fluidPage(
         Number of subjects for specific row entry<br>
         Mean<br>
         Standard deviation (NOT SEM)<br>
-        Decimal rounding</div>"
+        Rounding for mean<br>
+        Rounding for Observation</div>"
       )
     )
   ),
@@ -126,11 +130,13 @@ ui <- fluidPage(
       HTML("<br>Select Input File (csv, xls, or xlsx)<br>"),
       fileInput("upload", NULL, accept = c(".csv", ".xls", ".xlsx")),
       uiOutput("message"),
-      uiOutput("downloadButton"),
-      #downloadButton("download", "Download Results")
+      #uiOutput("ProgressBar"),
+      uiOutput("downloadButton")
     ),
     column(
       4,
+      HTML("<br><br>"),
+      downloadButton("documentation", "Download Documentation"),
       HTML("<br><br>"),
       downloadButton("template", "Download Spreadsheet Template"),
       HTML("<br><br>"),

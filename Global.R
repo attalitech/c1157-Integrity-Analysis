@@ -13,6 +13,8 @@ library(future)
 library(MBESS)
 library(dqrng)
 library(OpenMx)
+library(digitTests)
+library(rsconnect)
 #library(BiocManager)
 #BiocManager::install("multtest")
 
@@ -25,7 +27,6 @@ TRIALS <- NULL
 priorMessage <- NULL
 ColumnNames <- NULL
 CategoryNames <- NULL
-
 
 # m is the replication number for the Monte Carlo simulation
 m <- 100000
