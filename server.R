@@ -247,7 +247,7 @@ server <- function(input, output, session) {
       on.exit(progress$close())
       DATA <<- reactiveDataValidated()
       start_time <- Sys.time()
-      progress$set(message = "Processing Trials...", value = 0)
+      progress$set(message = "Processing Trial:", value = 0)
       cores <- detectCores() - 1
       registerDoParallel(cores)
       LengthTrials <- length(TRIALS)
@@ -260,7 +260,7 @@ server <- function(input, output, session) {
         )
         progress$set(
           value = i / LengthTrials, 
-          detail = paste0("Processed Trial ", TRIAL, ", P = ",OUTPUT$PLE[nrow(OUTPUT)-1]))
+          detail = paste0(" ",TRIAL, "P = ",OUTPUT$PLE[nrow(OUTPUT)-1]))
       }
       # Not sure which is correct
       with(registerDoFuture(), local = TRUE)
