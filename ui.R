@@ -5,145 +5,86 @@
 # UI                          #
 ###############################
 
-ui <- fluidPage(
-  useShinyjs(),
-  tags$head(
-    tags$style(
-      type="text/css", 
-      "#inline label { 
-      display: table-cell; 
-      text-align: center; 
-      vertical-align: middle; 
-      } 
-    #inline .form-group {
-    display: table-row;
-    }"
-    )
-  ),
-  fluidRow(
-    HTML(
-      "<div style = 'font-size: 14px; font-weight: bold;'>
-      &nbsp&nbspEvaluation of Baseline Data Integrity<br>
-      </div>"
+ui <- 
+  dashboardPage(
+    title = "RCT Integrity Analysis",
+    dashboardHeader(
+      title = 
+        div(
+          h3(
+            "Evaluation of Baseline Data Integrity", 
+            style="margin: 0;"
+            ), 
+          h4(
+            "Carlisle Shafer 'Monte Carlo' approach", 
+            style="margin: 0;"
+            )
+          ),
+      titleWidth = "100%"
       ),
-    HTML(
-      "<div style = 'font-size: 12px;'>
-      &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspCarlisle Shafer 'Monte Carlo' approach,
-      Anaesthesia 2015;70:848-58
-      </div>"),
-    style = 'border-bottom: 1px solid'
-  ),
-  fluidRow(
-    HTML(
-      "<div style = 'font-size: 12px;'>
-      &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspSpreadsheet Columns
-      </div>")
-  ),
-  fixedRow(
-    column(
-      1
-    ),
-    column(
-      1,
-      HTML(
-        "<div style = 'font-size: 11px; font-weight: bold;'>
-        Name </div>
-        <div style = 'font-size: 10px;'>
-        TRIAL<br>
-        ROW<br>
-        N<br>
-        MEAN<br>
-        SD<br>
-        ROUND MEAN<br>
-        ROUND OBS</div>"
-        )
-    ),
-    column(
-      1,
-      HTML(
-        "<div style = 'font-size: 11px; font-weight: bold;'>
-        Type </div>
-        <div style='font-size: 10px;'> 
-        alphanumeric<br>
-        alphanumeric<br>
-        integer<br>
-        floating<br>
-        floating<br>
-        integer<br>
-        integer</div>"
-      )
-    ),
-    column(
-      1,
-      HTML(
-        "<div style = 'font-size: 11px; font-weight: bold;'>
-        Mandatory</div>
-        <div style='font-size: 10px;'> 
-        No<br>
-        Yes<br>
-        Yes<br>
-        Yes<br>
-        Yes<br>
-        No<br>
-        No</div>"
-      )
-    ),
-    column(
-      5,
-      HTML(
-        "<div style = 'font-size: 11px; font-weight: bold;'>
-        Description</div>
-        <div style='font-size: 10px;'> 
-        Unique trial identifier (not needed if only 1 trial)<br>
-        Table row (e.g., 'weight', 'age')<br>
-        Number of subjects for specific row entry<br>
-        Mean<br>
-        Standard deviation (NOT SEM)<br>
-        Rounding for mean<br>
-        Rounding for Observation</div>"
-      )
-    )
-  ),
-  fixedRow(
-    column(
-      1
-    ),
-    column(
-      11,
-      HTML(
-        "<div style='font-size: 5px;'>
-        <br>
-        </div>
-        <div style='font-size: 11px;'> 
-        Categorical variables are handled as additional columns, with 
-        the name of the column corresponding to the category (e.g., 'M' and
-        'F'). The number of columns should equal the number of categories 
-        in the analysis.</div>
-        "
-      )
-    ),
-    style = 'border-bottom: 1px solid'
-  ),  
-  fluidRow(
-    column(
-      8,
-      HTML("<br>Select Input File (csv, xls, or xlsx)<br>"),
-      fileInput("upload", NULL, accept = c(".csv", ".xls", ".xlsx")),
-      uiOutput("message"),
-      #uiOutput("ProgressBar"),
-      uiOutput("downloadButton")
-    ),
-    column(
-      4,
-      HTML("<br><br>"),
+    dashboardSidebar(
+      collapsed = FALSE,
+      title = "Instructions",
+      tags$style(".skin-blue .sidebar .shiny-download-link { color: #444; }"),
+      tags$style(".sidebar { height: 10px; }"),
+      p(),
       downloadButton("documentation", "Download Documentation"),
-      HTML("<br><br>"),
-      downloadButton("template", "Download Spreadsheet Template"),
-      HTML("<br><br>"),
-      downloadButton("example", "Download Example Spreadsheet")
+      p(),
+      downloadButton("template", "Download Template"),
+      p(),
+      downloadButton("example", "Download Example"),
+      br(),
+      br(),
+      br(),
+      h6(
+        "Developed from John Carlisle's analysis of fraudulent research studies ",
+        "(references 2012, 2015, and 2017, see documentation) using the Monte Carlo approach",
+        "developed by John Carlisle and Steve Shafer."
+        ),
+      br(),
+      HTML(
+        '<p>
+        <h6>Please direct questions and feedback to Steve Shafer at
+        <a href="mailto:steven.shafer@stanford.edu">steven.shafer@stanford.edu</a>
+        .
+        </h6>
+        </p>'
+        )
+      ),
+    dashboardBody(
+      shinyjs::useShinyjs(),
+      tags$script(src = "app.js"),
+      tags$head(tags$link(href = "app.css", rel = "stylesheet")),
+      style = "max-height: 95vh; overflow-y: auto;" ,
+      tags$head(
+        tags$style(
+          type="text/css", 
+          "#inline label { 
+          display: table-cell; 
+          text-align: center; 
+          vertical-align: middle; 
+          } 
+        #inline .form-group {
+        display: table-row;
+        }"
+        )
+      ),
+      fluidRow(
+        img(
+          src='Table.png', align = "right", width = "100%"
+        ),
+        style = 'border-bottom: 1px solid; padding-left: 5%; padding-right: 5%; padding-bottom: 2%'
+      ),  
+      fluidRow(
+        column(
+          12,
+          HTML("<br>Select data entry spreadsheet (csv, xls, or xlsx)<br>"),
+          fileInput("upload", NULL, accept = c(".csv", ".xls", ".xlsx")),
+          uiOutput("GoButton"),
+          uiOutput("logContent"),
+          uiOutput("downloadButton")
+        )
+      ),
+      uiOutput("stopButton")
     )
-  ),
-  br(),
-  actionBttn("stop", HTML("&nbsp &nbsp EXIT &nbsp &nbsp"), style = "gradient", size = "xs", color = "warning"),
-  br()
-)
+  )
