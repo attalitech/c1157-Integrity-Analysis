@@ -186,9 +186,9 @@ function(input, output, session) {
     {
       PLE <- signif(sumz(PLEvalues)$p,4)
     } else {
-      if (length(PLEvalues == 1))
+      if (length(PLEvalues) == 1)
         PLE <- PLEvalues
-      if (length(PLEvalues)==0)
+      if (length(PLEvalues) == 0)
         PLE = "No values"
     }
 
@@ -196,9 +196,9 @@ function(input, output, session) {
     {
       PGE <- signif(sumz(PGEvalues)$p,4)
     } else {
-      if (length(PGEvalues == 1))
+      if (length(PGEvalues) == 1)
         PGE <- PGEvalues
-      if (length(PGEvalues)==0)
+      if (length(PGEvalues) == 0)
         PGE = "No values"
     }
 
