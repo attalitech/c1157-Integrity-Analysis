@@ -2,37 +2,110 @@ html {
   font-size: 16px;
 }
 
+.content-wrapper {
+  background: #f8f9fa;
+  padding: 1rem;
+}
+
 .sidebar {
-  padding: 0.5rem 1.5rem;
-  color: #b8c7ce;
-  font-size: 0.8rem;
+  background: #34495e;
+  padding-bottom: 0;
 }
 
 .sidebar-section {
-  padding-bottom: 1.5rem;
+  padding: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-section:last-child {
+  border-bottom: none;
 }
 
 .sidebar-title {
-  color: #eee;
+  color: #3c8dbc;
+  font-size: 1rem;
+  font-weight: bold;
   margin-bottom: 1rem;
-  margin-left: -0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-section p {
+  color: #b8c7ce;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  margin-bottom: 0.6rem;
 }
 
 .sidebar .sidebar-section .btn {
-  color: #444;
   width: 100%;
+  background: #3c8dbc;
   margin-bottom: 0.5rem;
+  padding: 0.6rem 0;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  border: none;
+  color: white;
+}
+
+.sidebar-section .btn-default:hover {
+  background: #3498db;
 }
 
 .contact-section {
-  text-align: center;
-  font-size: 0.85em;
-  padding: 1rem;
-  margin: 0 -0.5rem;
   background: rgba(0, 0, 0, 0.2);
+  text-align: center;
+  font-size: 0.9em;
+  color: #95a5a6;
 }
 
 .sidebar .contact-section a {
   color: #3c8dbc;
+  font-weight: 500;
 }
 
+.sidebar .contact-section a:hover {
+  color: #5bc0de;
+  text-decoration: underline;
+}
+
+#logContent {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1.25rem 0;
+  max-height: 25rem;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.shiny-notification {
+  background: #64a2c8;
+  color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.shiny-notification-close {
+  font-weight: bold;
+}
+
+.progress {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}
+
+.progress-bar {
+  background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.sidebar-section {
+  animation: fadeIn 0.5s ease-out !important;
+}
