@@ -1,0 +1,38 @@
+html {
+  font-size: 16px;
+}
+
+.sidebar {
+  padding: 0.5rem 1.5rem;
+  color: #b8c7ce;
+  font-size: 0.8rem;
+}
+
+.sidebar-section {
+  padding-bottom: 1.5rem;
+}
+
+.sidebar-title {
+  color: #eee;
+  margin-bottom: 1rem;
+  margin-left: -0.75rem;
+}
+
+.sidebar .sidebar-section .btn {
+  color: #444;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.contact-section {
+  text-align: center;
+  font-size: 0.85em;
+  padding: 1rem;
+  margin: 0 -0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.sidebar .contact-section a {
+  color: #3c8dbc;
+}
+

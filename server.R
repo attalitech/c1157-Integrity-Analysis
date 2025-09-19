@@ -1,21 +1,4 @@
-
-###############################
-# Server                      #
-###############################
-# Add adjustment to SD for number of subjects
-# Add ability to download raw data
-# Add line by line integrity checks
-# Determine categoricals by Integer only and < 6 types
-# Permit comments in file
-# Results file should only add P values to original file
-# Enforce order: Trial ROW (P value) N MEAN SD 
-# For Observations decimals, just look for OBS. New name will be Round_Observations
-# For Mean Dec, just look for an MEAN that does not equal "MEAN" 
-# Look for rapid rnorm function
-# Cutoff for number of categories (probably 5)
-
-
-server <- function(input, output, session) {
+function(input, output, session) {
   reactiveData <- reactiveVal()
   reactiveDataValidated <- reactiveVal()
   reactiveResults <- reactiveVal()
@@ -29,7 +12,7 @@ server <- function(input, output, session) {
 #  cluster <- makeCluster(cores)
 #  registerDoParallel(cluster)
 
-  output$stopButton <- 
+  output$stopButton <-
     renderUI({
       fluidRow(
         column(
@@ -40,7 +23,7 @@ server <- function(input, output, session) {
         )
       )
     })
-  
+
 
   # Write out logs to the log section
   initLogMsg <- "Comments Log"
@@ -51,18 +34,18 @@ server <- function(input, output, session) {
   })
   # Register the comments log with this user's session, to use outside the server
   session$userData$commentsLog <- commentsLog
-  
+
   is_category <- function(x) {
     # Remove NAs first for efficiency, then check if all values are integers
-    
+
     # If there are no na values, then it can't be a category
-    if (sum(is.na(x)) == 0) 
+    if (sum(is.na(x)) == 0)
       return(FALSE)
 
     # If the vector is empty after removing NAs then it is not a category
     x_clean <- x[!is.na(x)]
-    if (length(x_clean) == 0) 
-      return(FALSE) 
+    if (length(x_clean) == 0)
+      return(FALSE)
 
     # Check if all values are equal to their integer representation
     all(x_clean == as.integer(x_clean))
@@ -71,14 +54,14 @@ server <- function(input, output, session) {
   ###########################################################
   # Primary Statistical Function for Monte Carlo Simulation #
   ###########################################################
-  
+
   P_Calc <- function(TRIAL)
   {
     data <- DATA[DATA$TRIAL == TRIAL,]
     RowIDs <- unique(data$ROW)
-    
+
     x <- foreach(
-      j = 1:length(RowIDs), 
+      j = 1:length(RowIDs),
       .combine = rbind
       #  .options.future = list(seed = TRUE)
       #.export = c("CategoryNames", "m"),
@@ -87,7 +70,7 @@ server <- function(input, output, session) {
       {
         Row <- RowIDs[j]
         ROWS <- data[data$ROW == Row,]
-        
+
         # Greater than 1 line?
         if (nrow(ROWS) > 1)
         {
@@ -100,9 +83,9 @@ server <- function(input, output, session) {
             # The calculation of Meanvar is OK. SD^2 is an unbiased estimate
             # of variance
             Meanvar <-  sum(ROWS$N*ROWS$SD^2) / N
-            
+
             # However, this next calculatiion is biased. s.u. will correct it
-            # If N > 30, then the correction is < 1 %. It blows up if N > 343! 
+            # If N > 30, then the correction is < 1 %. It blows up if N > 343!
             if (N < 30)
             {
               Meansd <- s.u(sqrt(Meanvar), N)
@@ -122,13 +105,13 @@ server <- function(input, output, session) {
             meansim <- dqrnorm(m,mean=Meanmean,sd=SEMsample) # Generate a new mean for each simulation
             MonteCarloMean <- matrix(NA, nrow = m1, ncol = COLS) # I want one row for each simulation
             # Need to do each column separately. Couldn't think of an efficient way to do this without
-            # a loop. 
+            # a loop.
             for (i in 1:COLS)
               MonteCarloMean[,i] <-
               round(
                 rowmeans(
                   round(
-                    # The matrix below will have one row for each replication (m rows), 
+                    # The matrix below will have one row for each replication (m rows),
                     # and one column for each person (N[i] columns)
                     # Cannot use dqrnorm because it won't support the array
                     # of meansim needed for each replication
@@ -145,7 +128,7 @@ server <- function(input, output, session) {
             # Calculate the weighted mean, and then round
             MeanSamples <- rowsums (MonteCarloMean * N) / sum(ROWS$N)
             DiffSamples <- rowsums((MonteCarloMean - MeanSamples)^2)
-            
+
             PEQ <- sum(DiffSamples == DiffSample) / m1
             PLE <- sum(DiffSamples < DiffSample)/m1 + PEQ
             PGE <- sum(DiffSamples > DiffSample)/m1 + PEQ
@@ -170,19 +153,19 @@ server <- function(input, output, session) {
           PLE = "Only 1 Row"
           PGE = NA
         }
-        
+
         c(as.character(Row), PLE, PGE)
       } %seed% TRUE
-    
+
     # This bizarre code is because if there is only 1 row, R creates a data.frame
-    # with 3 columns and 1 row. 
+    # with 3 columns and 1 row.
     if (length(x) == 3)
     {
       x <- as.data.frame(t(x))
     } else {
     x <- as.data.frame(x)
     }
-    
+
     x <- cbind(NA, x)
     x[1,1] <- TRIAL
     x <- as.data.frame(x)
@@ -192,10 +175,10 @@ server <- function(input, output, session) {
     cat("match results", match(x$ROW, RowIDs), "\n")
     x <- x[match(x$ROW, RowIDs),]
     print(x)
-    
+
     PLEvalues <- as.numeric(x$PLE)
     PGEvalues <- as.numeric(x$PGE)
-    
+
     PLEvalues <- PLEvalues[!is.na(PLEvalues)]
     PGEvalues <- PGEvalues[!is.na(PGEvalues)]
 
@@ -259,12 +242,12 @@ server <- function(input, output, session) {
           P_Calc(TRIAL)
         )
         progress$set(
-          value = i / LengthTrials, 
+          value = i / LengthTrials,
           detail = paste0(" ",TRIAL, "P = ",OUTPUT$PLE[nrow(OUTPUT)-1]))
       }
       # Not sure which is correct
       with(registerDoFuture(), local = TRUE)
-      output$stopButton <- 
+      output$stopButton <-
         renderUI({
           fluidRow(
             column(
@@ -279,12 +262,12 @@ server <- function(input, output, session) {
     reactiveDone(TRUE)
     }
   )
-  
-  
+
+
   ###########################################################
   # Upload Data Routines                                    #
   ###########################################################
-  
+
   observeEvent(
     {
       input$upload
@@ -293,10 +276,10 @@ server <- function(input, output, session) {
       reactiveResults(NULL)
       reactiveDone(FALSE)
       commentsLog(NULL)
-      
+
       Filename <- input$upload$datapath
       ext <- tools::file_ext(Filename)
-      
+
       # Switch statement started to fail parsing... ????
       if (!ext %in% c("csv", "xlsx", "xls"))
       {
@@ -306,7 +289,7 @@ server <- function(input, output, session) {
         )
         return()
       }
-      
+
       if (ext == "csv")
       {
         DATA <<- read.csv(Filename)
@@ -327,7 +310,7 @@ server <- function(input, output, session) {
       }
     }
   )
-  
+
   observeEvent(
     {
       reactiveData()
@@ -339,11 +322,11 @@ server <- function(input, output, session) {
       {
         return()
       }
-      
+
       names(DATA) <- toupper(trimws(names(DATA)))
       ColumnNames <- names(DATA)
       outputComments(paste("Column names:", paste(ColumnNames, collapse = ", ")))
-      
+
       # Add trial number if necessary
       TRIALS <- grep("TRIAL", ColumnNames)
       if (length(TRIALS) == 0)
@@ -352,7 +335,7 @@ server <- function(input, output, session) {
       }
       names(DATA)[TRIALS[1]] <- "TRIAL"
       ColumnNames <- names(DATA)
-      
+
       ################################################
       # Adjust names to accept Carlisle 2016 input file
       MEASURES <- grep("MEASURE", ColumnNames)
@@ -383,11 +366,11 @@ server <- function(input, output, session) {
           names(DATA)[GROUPS[1]] <- "ROW"
         }
       }
-      
+
       ColumnNames <- names(DATA)
-      
+
       ##############################################
-      
+
       # Verify that the necessary rows are in place
       RowColumn <- grep("ROW", ColumnNames)
       if (length(RowColumn) == 0)
@@ -398,13 +381,13 @@ server <- function(input, output, session) {
         names(DATA)[RowColumn[1]] <- "ROW"
         ColumnNames <- names(DATA)
       }
-      
+
       if (is.null(DATA$N))
       {
         outputComments("Missing column labeled N")
         FAIL <- TRUE
       }
-      
+
       if (is.null(DATA$MEAN))
       {
         outputComments("Missing column labeled MEAN")
@@ -415,8 +398,8 @@ server <- function(input, output, session) {
         outputComments("Missing column labeled SD")
         FAIL <- TRUE
       }
-      
-      # Add rounding column for the mean  
+
+      # Add rounding column for the mean
       MeanColumns <- grep("MEAN", ColumnNames)
       RoundMeanColumn <- which(ColumnNames[MeanColumns] != "MEAN")
       if (length(RoundMeanColumn) > 0)
@@ -442,7 +425,7 @@ server <- function(input, output, session) {
         DATA$ROUND_MEAN <- 0
       }
       ColumnNames <- names(DATA)
-      
+
       ObservationColumns <- grep("OBS", ColumnNames)
       if (length(ObservationColumns) == 0)
       {
@@ -451,7 +434,7 @@ server <- function(input, output, session) {
         names(DATA)[ObservationColumns[1]] <- "ROUND_OBSERVATION"
       }
       ColumnNames <- names(DATA)
-      
+
       # Validate Categories
       CategoryNames <-
         ColumnNames[!ColumnNames %in% c("TRIAL", "ROW", "MEAN","N", "SD", "ROUND_OBSERVATION", "ROUND_MEAN")]
@@ -462,7 +445,7 @@ server <- function(input, output, session) {
       } else {
         for (i in 1:length(CategoryNames))
         {
-          if (!is_category(DATA[,CategoryNames[i]])) 
+          if (!is_category(DATA[,CategoryNames[i]]))
           {
             MiscNames <- c(MiscNames, CategoryNames[i])
             CategoryNames[i] <- "XXXXX"
@@ -470,14 +453,14 @@ server <- function(input, output, session) {
         }
         CategoryNames <- CategoryNames[CategoryNames != "XXXXX"]
       }
-      
+
       if (length(CategoryNames) == 0)
       {
         CategoryNames <- NULL
       } else {
         outputComments(paste("Category Names", paste(CategoryNames, collapse=", "), "\n"))
       }
-      
+
       # Validate each line
       for (i in 1:nrow(DATA))
       {
@@ -489,7 +472,7 @@ server <- function(input, output, session) {
             outputComments(paste("Please look at line", i+1))
             message <- NULL
             if (!is.na(DATA$N[i])) message <- paste(message, "N = ", DATA$N[i])
-            if (!is.na(DATA$MEAN[i])) 
+            if (!is.na(DATA$MEAN[i]))
             {
               if (!is.null(message)) message <- paste0(message, ", ")
               message <- paste(message, "MEAN = ", DATA$MEAN[i])
@@ -509,7 +492,7 @@ server <- function(input, output, session) {
             outputComments(paste("Please look at line", i+1))
             message <- NULL
             if (is.na(DATA$N[i])) message <- paste(message, "N = ", DATA$N[i])
-            if (is.na(DATA$MEAN[i])) 
+            if (is.na(DATA$MEAN[i]))
             {
               if (!is.null(message)) message <- paste0(message, ", ")
               message <- paste(message, "MEAN = ", DATA$MEAN[i])
@@ -531,7 +514,7 @@ server <- function(input, output, session) {
           }
         }
       }
-      
+
       if (FAIL)
       {
         outputComments("There are one or more errors in the data table. Please review the above messages to address these.")
@@ -540,13 +523,13 @@ server <- function(input, output, session) {
       DATA <- DATA[,c("TRIAL", "ROW", "N", "MEAN", "SD",  "ROUND_MEAN", "ROUND_OBSERVATION", CategoryNames, MiscNames)]
       DATA <- DATA[order(DATA$TRIAL, DATA$ROW),]
       TRIALS <- unique(DATA$TRIAL)
-      
+
       # Assign globally
       DATA <<- DATA
       TRIALS <<- TRIALS
       ColumnNames <<- ColumnNames
       CategoryNames <<- CategoryNames
-      
+
       LengthTrials <- length(TRIALS)
       cat("length trials: ",length(TRIALS), "\n")
       if (LengthTrials == 1)
@@ -566,11 +549,11 @@ server <- function(input, output, session) {
       }
       # Set reactive value
       reactiveDataValidated(DATA)
-      
+
     }
   )
-  
-  
+
+
 
   observeEvent(
     {
@@ -588,7 +571,7 @@ server <- function(input, output, session) {
       }
     }
   )
-  
+
   output$download <- downloadHandler(
     filename = function() {
       paste0("Integrity Analysis.",format(Sys.time(), format = "%y%m%d-%H%M%S"), ".xlsx")
@@ -599,34 +582,9 @@ server <- function(input, output, session) {
       write.xlsx(x, file)
     })
 
-  output$documentation <- downloadHandler(
-    filename = function() {
-      "IntegrityAnalysis.pdf"
-    },
-    content = function(file) {
-      file.copy("IntegrityAnalysis.pdf", file)
-    })
-  
-  output$template <- downloadHandler(
-    filename = function() {
-      "Template for Integrity Analysis.xlsx"
-    },
-    content = function(file) {
-      write.xlsx(read.xlsx("Template.xlsx"), file)
-    })
-
-    
-    output$example <- downloadHandler(
-    filename = function() {
-      "Example for Integrity Analysis.xlsx"
-    },
-    content = function(file) {
-      write.xlsx(read.xlsx("Example.xlsx"), file)
-    })
-
   observeEvent(input$stop, {
     stopApp(returnValue = invisible())
   })
-} 
+}
 
-     
+

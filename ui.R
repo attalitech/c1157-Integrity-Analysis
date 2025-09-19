@@ -1,90 +1,78 @@
-# Testing Baseline RCT Values for Fraud / Error
-# August  2025 
-
-###############################
-# UI                          #
-###############################
-
-ui <- 
-  dashboardPage(
-    title = "RCT Integrity Analysis",
-    dashboardHeader(
-      title = 
-        div(
-          h3(
-            "Evaluation of Baseline Data Integrity", 
-            style="margin: 0;"
-            ), 
-          h4(
-            "Carlisle Shafer 'Monte Carlo' approach", 
-            style="margin: 0;"
-            )
+dashboardPage(
+  title = "RCT Integrity Analysis",
+  dashboardHeader(
+    title =
+      div(
+        h3(
+          "Evaluation of Baseline Data Integrity",
+          style="margin: 0;"
           ),
-      titleWidth = "100%"
-      ),
-    dashboardSidebar(
-      collapsed = FALSE,
-      title = "Instructions",
-      tags$style(".skin-blue .sidebar .shiny-download-link { color: #444; }"),
-      tags$style(".sidebar { height: 10px; }"),
-      p(),
-      downloadButton("documentation", "Download Documentation"),
-      p(),
-      downloadButton("template", "Download Template"),
-      p(),
-      downloadButton("example", "Download Example"),
-      br(),
-      br(),
-      br(),
-      h6(
-        "Developed from John Carlisle's analysis of fraudulent research studies ",
-        "(references 2012, 2015, and 2017, see documentation) using the Monte Carlo approach",
-        "developed by John Carlisle and Steve Shafer."
+        h4(
+          "Carlisle Shafer 'Monte Carlo' approach",
+          style="margin: 0;"
+          )
         ),
-      br(),
-      HTML(
-        '<p>
-        <h6>Please direct questions and feedback to Steve Shafer at
-        <a href="mailto:steven.shafer@stanford.edu">steven.shafer@stanford.edu</a>
-        .
-        </h6>
-        </p>'
-        )
+    titleWidth = "100%"
+  ),
+  dashboardSidebar(
+    width = 250,
+    div(
+      class = "sidebar-section",
+      h4("Resources", class = "sidebar-title"),
+      tags$a(
+        "📖 Documentation",
+        href= "resources/IntegrityAnalysis.docx",
+        download = "Integrity Analysis.docx",
+        class = "btn btn-default"
       ),
-    dashboardBody(
-      shinyjs::useShinyjs(),
-      tags$script(src = "app.js"),
-      tags$head(tags$link(href = "app.css", rel = "stylesheet")),
-      style = "max-height: 95vh; overflow-y: auto;" ,
-      tags$head(
-        tags$style(
-          type="text/css", 
-          "#inline label { 
-          display: table-cell; 
-          text-align: center; 
-          vertical-align: middle; 
-          } 
-        #inline .form-group {
-        display: table-row;
-        }"
-        )
+      tags$a(
+        "📋 Data Template",
+        href= "resources/Template.xlsx",
+        download = "Template for Integrity Analysis.xlsx",
+        class = "btn btn-default"
       ),
-      fluidRow(
-        img(
-          src='Table.png', align = "right", width = "100%"
-        ),
-        style = 'border-bottom: 1px solid; padding-left: 5%; padding-right: 5%; padding-bottom: 2%'
-      ),  
-      fluidRow(
-        column(
-          12,
-          HTML("<br>Select data entry spreadsheet (csv, xls, or xlsx)<br>"),
-          fileInput("upload", NULL, accept = c(".csv", ".xls", ".xlsx")),
-          uiOutput("GoButton"),
-          uiOutput("logContent"),
-          uiOutput("downloadButton")
-        )
-      ),
-      uiOutput("stopButton")
+      tags$a(
+        "🧪 Sample Data",
+        href= "resources/Example.xlsx",
+        download = "Example for Integrity Analysis.xlsx",
+        class = "btn btn-default"
+      )
+    ),
+    div(
+      class = "sidebar-section",
+      h4("How It Works", class = "sidebar-title"),
+      p("Upload your RCT baseline data to detect potential integrity issues using Carlisle's Monte Carlo method.")
+    ),
+    div(
+      class = "sidebar-section",
+      h4("About This Tool", class = "sidebar-title"),
+      p("Developed from John Carlisle's analysis of fraudulent research studies (references 2012, 2015, and 2017, see documentation) using the Monte Carlo approach developed by John Carlisle and Steve Shafer.")
+    ),
+
+    div(
+      class = "sidebar-section contact-section",
+      "Questions/feedback?",
+      tags$a(
+        "Contact Steve Shafer",
+        href = "mailto:steven.shafer@stanford.edu?subject=Question about RCT Integrity Analysis app",
+        target = "_blank"
+      )
     )
+  ),
+  dashboardBody(
+    tags$head(
+      tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")
+    ),
+    shinyjs::useShinyjs(),
+    fluidRow(
+      column(
+        12,
+        fileInput("upload", "Select data entry spreadsheet (csv, xls, or xlsx)", accept = c(".csv", ".xls", ".xlsx")),
+        uiOutput("GoButton"),
+        uiOutput("logContent"),
+        uiOutput("downloadButton")
+      )
+    ),
+    uiOutput("stopButton")
   )
+)
