@@ -111,5 +111,6 @@ html {
 }
 
 #stop {
+  margin-top: 1rem;
   padding: 0.2rem 1rem;
 }
