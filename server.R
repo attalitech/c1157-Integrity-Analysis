@@ -95,7 +95,7 @@ function(input, output, session) {
       }
       if (ext == "xls")
       {
-        DATA <<- read.xl(Filename)
+        DATA <<- readxl::read_xls(Filename)
         reactiveData(DATA)
         return()
       }
