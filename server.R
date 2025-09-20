@@ -583,7 +583,7 @@ function(input, output, session) {
     })
 
   observeEvent(input$stop, {
-    sessoin$close()
+    shinyjs::runjs("window.close()")
   })
 }
 
