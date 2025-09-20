@@ -1,3 +1,27 @@
+read_input_file <- function(filepath) {
+  ext <- tools::file_ext(filepath)
+
+  result <- tryCatch({
+    if (ext == "csv") {
+      read.csv(filepath)
+    } else if (ext == "xlsx") {
+      readxl::read_xlsx(filepath)
+    } else if (ext == "xls") {
+      readxl::read_xlss(filepath)
+    } else {
+      stop(".", ext, " is not a supported file type")
+    }
+  }, error = function(err) {
+    stop("Error reading file: ", err$message)
+  })
+
+  if (is.data.frame(result) && nrow(result) == 0) {
+    stop("File does not contain any data")
+  }
+
+  result
+}
+
 is_category <- function(x) {
   # Remove NAs first for efficiency, then check if all values are integers
 

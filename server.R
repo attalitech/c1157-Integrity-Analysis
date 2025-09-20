@@ -59,29 +59,12 @@ function(input, output, session) {
     reactiveDone(FALSE)
     commentsLog(NULL)
 
-    Filename <- input$upload$datapath
-    ext <- tools::file_ext(Filename)
-
     result <- tryCatch({
-      if (ext == "csv") {
-        read.csv(Filename)
-      } else if (ext == "xlsx") {
-        readxl::read_xlsx(Filename)
-      } else if (ext == "xls") {
-        readxl::read_xls(Filename)
-      } else {
-        outputComments(".", ext, " is not a supported file type", sep = "")
-        return()
-      }
+      read_input_file(input$upload$datapath)
     }, error = function(err) {
-      outputComments("Error reading file:", err$message)
-      return()
+      outputComments(err$message)
+      NULL
     })
-
-    if (is.data.frame(result) && nrow(result) == 0) {
-      outputComments("File does not contain any data")
-      result <- NULL
-    }
 
     result
   })
