@@ -13,6 +13,9 @@ function(input, output, session) {
   output$logContent <- renderUI({
     HTML(commentsLog())
   })
+  observe({
+    shinyjs::toggle("logContent", condition = !is.null(commentsLog()))
+  })
   # Register the comments log with this user's session, to use outside the server
   session$userData$commentsLog <- commentsLog
 
