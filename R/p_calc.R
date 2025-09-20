@@ -1,6 +1,7 @@
 # Primary Statistical Function for Monte Carlo Simulation
-P_Calc <- function(TRIAL)
+P_Calc <- function(.data, TRIAL)
 {
+  DATA <- .data
   data <- DATA[DATA$TRIAL == TRIAL,]
   RowIDs <- unique(data$ROW)
 

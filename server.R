@@ -1,16 +1,14 @@
 function(input, output, session) {
-  reactiveData <- reactiveVal()
   reactiveDataValidated <- reactiveVal()
-  reactiveResults <- reactiveVal()
   reactiveDone <- reactiveVal(FALSE)
   output$downloadButton <- NULL
   output$logContent <- NULL
   output$GoButton <- NULL
   OUTPUT <- NULL
   stopImplicitCluster()
-#  cores <- detectCores() - 1  # Use one less than available cores
-#  cluster <- makeCluster(cores)
-#  registerDoParallel(cluster)
+  #  cores <- detectCores() - 1  # Use one less than available cores
+  #  cluster <- makeCluster(cores)
+  #  registerDoParallel(cluster)
 
   # Write out logs to the log section
   initLogMsg <- "Comments Log"
@@ -33,7 +31,7 @@ function(input, output, session) {
     {
       progress <- shiny::Progress$new(session, style = "notification")
       on.exit(progress$close())
-      DATA <<- reactiveDataValidated()
+      data_validated <- reactiveDataValidated()
       start_time <- Sys.time()
       progress$set(message = "Processing Trial:", value = 0)
       cores <- detectCores() - 1
@@ -44,7 +42,7 @@ function(input, output, session) {
         TRIAL <- TRIALS[i]
         OUTPUT <<- rbind(
           OUTPUT,
-          P_Calc(TRIAL)
+          P_Calc(data_validated, TRIAL)
         )
         progress$set(
           value = i / LengthTrials,
@@ -53,66 +51,47 @@ function(input, output, session) {
       # Not sure which is correct
       with(registerDoFuture(), local = TRUE)
 
-    outputComments(paste("Execution time", round(Sys.time() - start_time, 2)))
-    reactiveDone(TRUE)
+      outputComments(paste("Execution time", round(Sys.time() - start_time, 2)))
+      reactiveDone(TRUE)
     }
   )
 
+  raw_data <- eventReactive(input$upload, {
+    reactiveDone(FALSE)
+    commentsLog(NULL)
 
-  ###########################################################
-  # Upload Data Routines                                    #
-  ###########################################################
+    Filename <- input$upload$datapath
+    ext <- tools::file_ext(Filename)
 
-  observeEvent(input$upload, {
-      reactiveResults(NULL)
-      reactiveDone(FALSE)
-      commentsLog(NULL)
-
-      Filename <- input$upload$datapath
-      ext <- tools::file_ext(Filename)
-
-      # Switch statement started to fail parsing... ????
-      if (!ext %in% c("csv", "xlsx", "xls"))
-      {
-        outputComments(
-          paste0(".",ext,"is not a supported file type."
-          )
-        )
+    result <- tryCatch({
+      if (ext == "csv") {
+        read.csv(Filename)
+      } else if (ext == "xlsx") {
+        readxl::read_xlsx(Filename)
+      } else if (ext == "xls") {
+        readxl::read_xls(Filename)
+      } else {
+        outputComments(".", ext, " is not a supported file type", sep = "")
         return()
       }
+    }, error = function(err) {
+      outputComments("Error reading file")
+      return()
+    })
 
-      if (ext == "csv")
-      {
-        DATA <<- read.csv(Filename)
-        reactiveData(DATA)
-        return()
-      }
-      if (ext == "xlsx")
-      {
-        DATA <<- read.xlsx(Filename)
-        reactiveData(DATA)
-        return()
-      }
-      if (ext == "xls")
-      {
-        DATA <<- readxl::read_xls(Filename)
-        reactiveData(DATA)
-        return()
-      }
+    if (is.data.frame(result) && nrow(result) == 0) {
+      outputComments("File does not contain any data")
+      result <- NULL
     }
-  )
 
-  observeEvent(
-    {
-      reactiveData()
-    },
-    {
+    req(result)
+
+    result
+  })
+
+  observeEvent(raw_data(), {
       FAIL <- FALSE
-      DATA <- reactiveData()
-      if (is.null(DATA))
-      {
-        return()
-      }
+      DATA <- raw_data()
 
       names(DATA) <- toupper(trimws(names(DATA)))
       ColumnNames <- names(DATA)
@@ -358,7 +337,7 @@ function(input, output, session) {
       } else {
         output$downloadButton <- renderUI({
           downloadButton("download", "Download Results")
-          })
+        })
       }
     }
   )
@@ -370,7 +349,7 @@ function(input, output, session) {
     content = function(file) {
       x <- OUTPUT
       names(x) <- c("TRIAL", "ROW", "Fraction <=", "Fraction >=")
-      write.xlsx(x, file)
+      openxlsx::write.xlsx(x, file)
     })
 
   observeEvent(input$stop, {

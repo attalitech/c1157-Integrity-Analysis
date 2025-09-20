@@ -1,7 +1,5 @@
 # Global.R
 library(shiny)
-library(openxlsx)
-library(readxl)
 library(metap)
 library(Rfast)
 library(shinyjs)
@@ -29,7 +27,6 @@ plan(multisession)
 #MONTE_CARLO_SIM_REPS <- 15000
 m <- 15000
 
-DATA <- NULL
 Results <- NULL
 LineNumber <- 1
 TRIALS <- NULL
