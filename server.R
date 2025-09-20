@@ -182,24 +182,20 @@ function(input, output, session) {
     PLEvalues <- PLEvalues[!is.na(PLEvalues)]
     PGEvalues <- PGEvalues[!is.na(PGEvalues)]
 
-    if (length(PLEvalues) > 1)
-    {
-      PLE <- signif(sumz(PLEvalues)$p,4)
-    } else {
-      if (length(PLEvalues) == 1)
-        PLE <- PLEvalues
-      if (length(PLEvalues) == 0)
-        PLE = "No values"
+    if (length(PLEvalues) > 1) {
+      PLE <- signif(sumz(PLEvalues)$p, 4)
+    } else if (length(PLEvalues) == 1) {
+      PLE <- PLEvalues
+    } else if (length(PLEvalues) == 0) {
+      PLE <- "No values"
     }
 
-    if (length(PGEvalues) > 1)
-    {
+    if (length(PGEvalues) > 1) {
       PGE <- signif(sumz(PGEvalues)$p,4)
-    } else {
-      if (length(PGEvalues) == 1)
-        PGE <- PGEvalues
-      if (length(PGEvalues) == 0)
-        PGE = "No values"
+    } else if (length(PGEvalues) == 1) {
+      PGE <- PGEvalues
+    } else if (length(PGEvalues) == 0) {
+      PGE <- "No values"
     }
 
     lastline <- data.frame(
