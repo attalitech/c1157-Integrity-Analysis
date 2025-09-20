@@ -64,15 +64,10 @@ dashboardPage(
       tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")
     ),
     shinyjs::useShinyjs(),
-    fluidRow(
-      column(
-        12,
-        fileInput("upload", "Select data entry spreadsheet (csv, xls, or xlsx)", accept = c(".csv", ".xls", ".xlsx")),
-        uiOutput("GoButton"),
-        uiOutput("logContent"),
-        uiOutput("downloadButton")
-      )
-    ),
-    shinyWidgets::actionBttn("stop", HTML("&nbsp &nbsp EXIT &nbsp &nbsp"), style = "gradient", size = "xs", color = "warning")
+    fileInput("upload", "Select data entry spreadsheet (csv, xls, or xlsx)", accept = c(".csv", ".xls", ".xlsx")),
+    uiOutput("GoButton"),
+    uiOutput("logContent"),
+    uiOutput("downloadButton"),
+    shinyWidgets::actionBttn("stop", "EXIT", style = "gradient", size = "xs", color = "warning")
   )
 )
