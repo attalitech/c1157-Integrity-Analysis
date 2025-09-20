@@ -12,19 +12,6 @@ function(input, output, session) {
 #  cluster <- makeCluster(cores)
 #  registerDoParallel(cluster)
 
-  output$stopButton <-
-    renderUI({
-      fluidRow(
-        column(
-          12,
-          br(),
-          actionBttn("stop", HTML("&nbsp &nbsp EXIT &nbsp &nbsp"), style = "gradient", size = "xs", color = "warning"),
-          br()
-        )
-      )
-    })
-
-
   # Write out logs to the log section
   initLogMsg <- "Comments Log"
   commentsLog <- reactiveVal(NULL)
@@ -221,7 +208,6 @@ function(input, output, session) {
       input$go
     },
     {
-      output$stopButton <- NULL
       progress <- shiny::Progress$new(session, style = "notification")
       on.exit(progress$close())
       DATA <<- reactiveDataValidated()
@@ -243,17 +229,7 @@ function(input, output, session) {
       }
       # Not sure which is correct
       with(registerDoFuture(), local = TRUE)
-      output$stopButton <-
-        renderUI({
-          fluidRow(
-            column(
-              12,
-              br(),
-              actionBttn("stop", HTML("&nbsp &nbsp EXIT &nbsp &nbsp"), style = "gradient", size = "xs", color = "warning"),
-              br()
-            )
-          )
-        })
+
     outputComments(paste("Execution time", round(Sys.time() - start_time, 2)))
     reactiveDone(TRUE)
     }

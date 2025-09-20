@@ -73,6 +73,6 @@ dashboardPage(
         uiOutput("downloadButton")
       )
     ),
-    uiOutput("stopButton")
+    shinyWidgets::actionBttn("stop", HTML("&nbsp &nbsp EXIT &nbsp &nbsp"), style = "gradient", size = "xs", color = "warning")
   )
 )
