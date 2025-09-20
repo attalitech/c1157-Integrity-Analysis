@@ -1,8 +1,6 @@
 function(input, output, session) {
-  reactiveDataValidated <- reactiveVal()
   reactiveDone <- reactiveVal(FALSE)
-  output$downloadButton <- NULL
-  output$GoButton <- NULL
+
   OUTPUT <- NULL
   stopImplicitCluster()
   #  cores <- detectCores() - 1  # Use one less than available cores
@@ -25,12 +23,12 @@ function(input, output, session) {
 
   observeEvent(
     {
-      input$go
+      input$analyze
     },
     {
       progress <- shiny::Progress$new(session, style = "notification")
       on.exit(progress$close())
-      data_validated <- reactiveDataValidated()
+      data_validated <- data_validated()
       start_time <- Sys.time()
       progress$set(message = "Processing Trial:", value = 0)
       cores <- detectCores() - 1
@@ -55,7 +53,9 @@ function(input, output, session) {
     }
   )
 
-  raw_data <- eventReactive(input$upload, {
+  raw_data <- reactive({
+    req(input$upload)
+
     reactiveDone(FALSE)
     commentsLog(NULL)
 
@@ -74,7 +74,7 @@ function(input, output, session) {
         return()
       }
     }, error = function(err) {
-      outputComments("Error reading file")
+      outputComments("Error reading file:", err$message)
       return()
     })
 
@@ -83,12 +83,14 @@ function(input, output, session) {
       result <- NULL
     }
 
-    req(result)
-
     result
   })
 
-  observeEvent(raw_data(), {
+  data_validated <- reactive({
+      if (is.null(raw_data())) {
+        return()
+      }
+
       FAIL <- FALSE
       DATA <- raw_data()
 
@@ -300,28 +302,15 @@ function(input, output, session) {
       CategoryNames <<- CategoryNames
 
       LengthTrials <- length(TRIALS)
-      cat("length trials: ",length(TRIALS), "\n")
-      if (LengthTrials == 1)
-      {
-        output$downloadButton <- renderUI({
-          input_task_button(
-            "go", HTML("&nbsp &nbsp Analyze Trial &nbsp &nbsp"), style = "gradient", size = "xs", color = "success")
-        })
-      } else {
-        output$downloadButton <- renderUI({
-          HTML("<br>")
-          input_task_button(
-            "go", HTML(
-              paste(
-                "&nbsp &nbsp Analyze", LengthTrials, "Trials &nbsp &nbsp")))
-        })
-      }
-      # Set reactive value
-      reactiveDataValidated(DATA)
+      outputComments("# of trials:",length(TRIALS))
 
+      DATA
     }
   )
 
+  observeEvent(data_validated(), ignoreNULL = FALSE, {
+    shinyjs::toggle("analyze", condition = !is.null(data_validated()))
+  })
 
 
   observeEvent(
@@ -353,6 +342,7 @@ function(input, output, session) {
 
   observeEvent(input$stop, {
     shinyjs::runjs("window.close()")
+    session$close()
   })
 }
 
