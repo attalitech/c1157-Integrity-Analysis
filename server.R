@@ -2,7 +2,6 @@ function(input, output, session) {
   reactiveDataValidated <- reactiveVal()
   reactiveDone <- reactiveVal(FALSE)
   output$downloadButton <- NULL
-  output$logContent <- NULL
   output$GoButton <- NULL
   OUTPUT <- NULL
   stopImplicitCluster()
@@ -10,11 +9,8 @@ function(input, output, session) {
   #  cluster <- makeCluster(cores)
   #  registerDoParallel(cluster)
 
-  # Write out logs to the log section
-  initLogMsg <- "Comments Log"
   commentsLog <- reactiveVal(NULL)
   output$logContent <- renderUI({
-    invalidateLater(1000)
     HTML(commentsLog())
   })
   # Register the comments log with this user's session, to use outside the server
@@ -51,7 +47,7 @@ function(input, output, session) {
       # Not sure which is correct
       with(registerDoFuture(), local = TRUE)
 
-      outputComments(paste("Execution time", round(Sys.time() - start_time, 2)))
+      outputComments("Execution time", round(Sys.time() - start_time, 2))
       reactiveDone(TRUE)
     }
   )
@@ -95,7 +91,7 @@ function(input, output, session) {
 
       names(DATA) <- toupper(trimws(names(DATA)))
       ColumnNames <- names(DATA)
-      outputComments(paste("Column names:", paste(ColumnNames, collapse = ", ")))
+      outputComments("Column names:", paste(ColumnNames, collapse = ", "))
 
       # Add trial number if necessary
       TRIALS <- grep("TRIAL", ColumnNames)
@@ -228,7 +224,7 @@ function(input, output, session) {
       {
         CategoryNames <- NULL
       } else {
-        outputComments(paste("Category Names", paste(CategoryNames, collapse=", "), "\n"))
+        outputComments("Category Names", paste(CategoryNames, collapse=", "), "\n")
       }
 
       # Validate each line
@@ -239,7 +235,7 @@ function(input, output, session) {
           DATA$ROUND_MEAN[i] <- DATA$ROUND_OBSERVATION[i] <- NA
           if (any(!is.na(DATA[i, c("N", "MEAN", "SD")])))
           {
-            outputComments(paste("Please look at line", i+1))
+            outputComments("Please look at line", i+1)
             message <- NULL
             if (!is.na(DATA$N[i])) message <- paste(message, "N = ", DATA$N[i])
             if (!is.na(DATA$MEAN[i]))
@@ -252,14 +248,14 @@ function(input, output, session) {
               if (!is.null(message)) message <- paste0(message, ", ")
               message <- paste(message, "SD = ", DATA$SD[i])
             }
-            outputComments(paste("This appears to be a category. However, it has entries for continuous variables."))
-            outputComments(paste("Specifically: ", message))
+            outputComments("This appears to be a category. However, it has entries for continuous variables.")
+            outputComments("Specifically:", message)
             FAIL <- TRUE
           }
         } else {
           if (any(is.na(DATA[i, c("N", "MEAN", "SD")])))
           {
-            outputComments(paste("Please look at line", i+1))
+            outputComments("Please look at line", i+1)
             message <- NULL
             if (is.na(DATA$N[i])) message <- paste(message, "N = ", DATA$N[i])
             if (is.na(DATA$MEAN[i]))
@@ -272,8 +268,8 @@ function(input, output, session) {
               if (!is.null(message)) message <- paste0(message, ", ")
               message <- paste(message, "SD = ", DATA$SD[i])
             }
-            outputComments(paste("This appears to be a continuous variable. However, it has NA entries for required fields."))
-            outputComments(paste("Specifically: ", message))
+            outputComments("This appears to be a continuous variable. However, it has NA entries for required fields.")
+            outputComments("Specifically:", message)
             FAIL <- TRUE
           }
           # Fix MEAN digits if Mean has any decimal digits
