@@ -583,7 +583,7 @@ function(input, output, session) {
     })
 
   observeEvent(input$stop, {
-    stopApp(returnValue = invisible())
+    sessoin$close()
   })
 }
 
