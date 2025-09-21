@@ -279,25 +279,14 @@ function(input, output, session) {
   })
 
 
-  observeEvent(
-    {
-      analysisDone()
-    },
-    {
-      #TODO
-      DONE <- analysisDone()
-      if (!DONE)
-      {
-        output$downloadButton <- NULL
-      } else {
-        output$downloadButton <- renderUI({
-          downloadButton("download", "Download Results")
-        })
-      }
+  observeEvent(analysisDone(), {
+    if (analysisDone()) {
+      shinyjs::hide("analyze")
     }
-  )
+    shinyjs::toggle("download_results", condition = analysisDone())
+  })
 
-  output$download <- downloadHandler(
+  output$download_results <- downloadHandler(
     filename = function() {
       paste0("Integrity Analysis.",format(Sys.time(), format = "%y%m%d-%H%M%S"), ".xlsx")
     },

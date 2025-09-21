@@ -67,7 +67,7 @@ dashboardPage(
     fileInput("upload", "Select data entry spreadsheet (csv, xls, or xlsx)", accept = c(".csv", ".xls", ".xlsx")),
     uiOutput("logContent") |> shinyjs::hidden(),
     input_task_button("analyze", "Analyze Trials") |> shinyjs::hidden(),
-    uiOutput("downloadButton"),
+    downloadButton("download_results", "Download Results") |> shinyjs::hidden(), br(), br(),
     shinyWidgets::actionBttn("stop", "EXIT", style = "gradient", size = "xs", color = "warning")
   )
 )
