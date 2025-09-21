@@ -7,7 +7,7 @@ read_input_file <- function(filepath) {
     } else if (ext == "xlsx") {
       readxl::read_xlsx(filepath)
     } else if (ext == "xls") {
-      readxl::read_xlss(filepath)
+      readxl::read_xls(filepath)
     } else {
       stop(".", ext, " is not a supported file type")
     }
@@ -32,6 +32,10 @@ is_category <- function(x) {
   # If the vector is empty after removing NAs then it is not a category
   x_clean <- x[!is.na(x)]
   if (length(x_clean) == 0)
+    return(FALSE)
+
+  # if there are non-numeric values, it is not a category
+  if (!is.numeric(x_clean))
     return(FALSE)
 
   # Check if all values are equal to their integer representation

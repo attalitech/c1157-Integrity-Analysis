@@ -27,10 +27,4 @@ plan(multisession)
 #MONTE_CARLO_SIM_REPS <- 15000
 m <- 15000
 
-Results <- NULL
-LineNumber <- 1
-TRIALS <- NULL
-LengthTrials <- NULL
-priorMessage <- NULL
-ColumnNames <- NULL
-CategoryNames <- NULL
+COMMON_COL_NAMES <- c("TRIAL", "ROW", "N", "MEAN", "SD",  "ROUND_MEAN", "ROUND_OBSERVATION")

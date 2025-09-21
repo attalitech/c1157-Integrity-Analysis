@@ -33,10 +33,11 @@ function(input, output, session) {
       progress$set(message = "Processing Trial:", value = 0)
       cores <- detectCores() - 1
       registerDoParallel(cores)
-      LengthTrials <- length(TRIALS)
+      trials <- unique(data_validated()$TRIAL)
+      LengthTrials <- length(trials)
       for (i in 1:LengthTrials)
       {
-        TRIAL <- TRIALS[i]
+        TRIAL <- trials[i]
         OUTPUT <<- rbind(
           OUTPUT,
           P_Calc(data_validated, TRIAL)
@@ -82,12 +83,12 @@ function(input, output, session) {
       outputComments("Column names:", paste(ColumnNames, collapse = ", "))
 
       # Add trial number if necessary
-      TRIALS <- grep("TRIAL", ColumnNames)
-      if (length(TRIALS) == 0)
+      trials <- grep("TRIAL", ColumnNames)
+      if (length(trials) == 0)
       {
         DATA$TRIAL <- 1
       }
-      names(DATA)[TRIALS[1]] <- "TRIAL"
+      names(DATA)[trials[1]] <- "TRIAL"
       ColumnNames <- names(DATA)
 
       ################################################
@@ -190,29 +191,16 @@ function(input, output, session) {
       ColumnNames <- names(DATA)
 
       # Validate Categories
-      CategoryNames <-
-        ColumnNames[!ColumnNames %in% c("TRIAL", "ROW", "MEAN","N", "SD", "ROUND_OBSERVATION", "ROUND_MEAN")]
-      MiscNames <- NULL
-      if (length(CategoryNames) == 0)
-      {
-        CategoryNames <- NULL
-      } else {
-        for (i in 1:length(CategoryNames))
-        {
-          if (!is_category(DATA[,CategoryNames[i]]))
-          {
-            MiscNames <- c(MiscNames, CategoryNames[i])
-            CategoryNames[i] <- "XXXXX"
-          }
-        }
-        CategoryNames <- CategoryNames[CategoryNames != "XXXXX"]
-      }
+      CategoryNames <- ColumnNames[!ColumnNames %in% COMMON_COL_NAMES]
+      categories <- sapply(CategoryNames, function(name) is_category(DATA[, name]))
+      CategoryNames <- names(categories[categories == TRUE])
+      MiscNames <- names(categories[categories == FALSE])
 
       if (length(CategoryNames) == 0)
       {
         CategoryNames <- NULL
       } else {
-        outputComments("Category Names", paste(CategoryNames, collapse=", "), "\n")
+        outputComments("Category Names:", toString(CategoryNames), "\n")
       }
 
       # Validate each line
@@ -274,18 +262,11 @@ function(input, output, session) {
         outputComments("There are one or more errors in the data table. Please review the above messages to address these.")
         return()
       }
-      DATA <- DATA[,c("TRIAL", "ROW", "N", "MEAN", "SD",  "ROUND_MEAN", "ROUND_OBSERVATION", CategoryNames, MiscNames)]
+      DATA <- DATA[, c(COMMON_COL_NAMES, CategoryNames, MiscNames)]
       DATA <- DATA[order(DATA$TRIAL, DATA$ROW),]
-      TRIALS <- unique(DATA$TRIAL)
+      trials <- unique(DATA$TRIAL)
 
-      # Assign globally
-      DATA <<- DATA
-      TRIALS <<- TRIALS
-      ColumnNames <<- ColumnNames
-      CategoryNames <<- CategoryNames
-
-      LengthTrials <- length(TRIALS)
-      outputComments("# of trials:",length(TRIALS))
+      outputComments("# of trials:", length(trials))
 
       DATA
     }
