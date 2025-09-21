@@ -1,7 +1,7 @@
 function(input, output, session) {
-  reactiveDone <- reactiveVal(FALSE)
+  analysisDone <- reactiveVal(FALSE)
+  analysisOutput <- reactiveVal()
 
-  OUTPUT <- NULL
   stopImplicitCluster()
   #  cores <- detectCores() - 1  # Use one less than available cores
   #  cluster <- makeCluster(cores)
@@ -35,29 +35,31 @@ function(input, output, session) {
       registerDoParallel(cores)
       trials <- unique(data_validated()$TRIAL)
       LengthTrials <- length(trials)
+      result <- NULL
       for (i in 1:LengthTrials)
       {
         TRIAL <- trials[i]
-        OUTPUT <<- rbind(
-          OUTPUT,
+        result <- rbind(
+          result,
           P_Calc(data_validated, TRIAL)
         )
         progress$set(
           value = i / LengthTrials,
-          detail = paste0(" ",TRIAL, "P = ",OUTPUT$PLE[nrow(OUTPUT)-1]))
+          detail = paste0(" ",TRIAL, "P = ",result$PLE[nrow(result)-1]))
       }
+      analysisOutput(result)
       # Not sure which is correct
       with(registerDoFuture(), local = TRUE)
 
       outputComments("Execution time", round(Sys.time() - start_time, 2))
-      reactiveDone(TRUE)
+      analysisDone(TRUE)
     }
   )
 
   raw_data <- reactive({
     req(input$upload)
 
-    reactiveDone(FALSE)
+    analysisDone(FALSE)
     commentsLog(NULL)
 
     result <- tryCatch({
@@ -279,10 +281,11 @@ function(input, output, session) {
 
   observeEvent(
     {
-      reactiveDone()
+      analysisDone()
     },
     {
-      DONE <- reactiveDone()
+      #TODO
+      DONE <- analysisDone()
       if (!DONE)
       {
         output$downloadButton <- NULL
@@ -299,7 +302,7 @@ function(input, output, session) {
       paste0("Integrity Analysis.",format(Sys.time(), format = "%y%m%d-%H%M%S"), ".xlsx")
     },
     content = function(file) {
-      x <- OUTPUT
+      x <- analysisOutput()
       names(x) <- c("TRIAL", "ROW", "Fraction <=", "Fraction >=")
       openxlsx::write.xlsx(x, file)
     })
@@ -309,5 +312,3 @@ function(input, output, session) {
     session$close()
   })
 }
-
-
