@@ -24,8 +24,7 @@ registerDoFuture(flavor = "%dofuture%")
 plan(multisession)
 
 # replication number for the Monte Carlo simulation
-#MONTE_CARLO_SIM_REPS <- 15000
-m <- 15000
+MONTE_CARLO_SIM_REPS <- 15000
 
 COMMON_COL_NAMES <- c("TRIAL", "ROW", "N", "MEAN", "SD",  "ROUND_MEAN", "ROUND_OBSERVATION")
 COLS_CONTINUOUS <- c("N", "MEAN", "SD")

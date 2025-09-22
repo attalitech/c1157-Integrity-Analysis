@@ -10,7 +10,7 @@ P_Calc <- function(full_data, TRIAL)
     j = 1:length(RowIDs),
     .combine = rbind
     #  .options.future = list(seed = TRUE)
-    #.export = c("CategoryNames", "m"),
+    #.export = c("CategoryNames", "MONTE_CARLO_SIM_REPS"),
     #.packages = c("Rfast", "dqrng")
   ) %do%
     {
@@ -39,16 +39,16 @@ P_Calc <- function(full_data, TRIAL)
             Meansd <- sqrt(Meanvar)
           }
           # Protect size of simulation
-          if ((m*N) < 1000000000) # One billion
+          if ((MONTE_CARLO_SIM_REPS*N) < 1000000000) # One billion
           {
-            m1 <- m
+            m1 <- MONTE_CARLO_SIM_REPS
           } else {
             m1 <- 1000000000 / N
           }
           SEMsample <- Meansd/sqrt(mean(ROWS$N))
           DiffSample <- sum((ROWS$MEAN - Meanmean)^2) # Squared difference of column means
           # Monte Carlo Simulation
-          meansim <- dqrnorm(m,mean=Meanmean,sd=SEMsample) # Generate a new mean for each simulation
+          meansim <- dqrnorm(MONTE_CARLO_SIM_REPS,mean=Meanmean,sd=SEMsample) # Generate a new mean for each simulation
           MonteCarloMean <- matrix(NA, nrow = m1, ncol = COLS) # I want one row for each simulation
           # Need to do each column separately. Couldn't think of an efficient way to do this without
           # a loop.
@@ -85,7 +85,7 @@ P_Calc <- function(full_data, TRIAL)
             if (all(is.na(ROWS[,NAME])))
               ROWS[,NAME] <- NULL
           }
-          PLE <- chisq.test(ROWS, simulate.p.value=m)$p.value
+          PLE <- chisq.test(ROWS, simulate.p.value=MONTE_CARLO_SIM_REPS)$p.value
           PGE <- 1-PLE
         }
         # Need to be sure P != 0 or 1
