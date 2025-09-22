@@ -1,11 +1,7 @@
 # Primary Statistical Function for Monte Carlo Simulation
 P_Calc <- function(full_data, TRIAL)
 {
-
-  ColumnNames <- names(full_data)
-  CategoryNames <- ColumnNames[!ColumnNames %in% COMMON_COL_NAMES]
-  categories <- sapply(CategoryNames, function(name) is_category(full_data[, name]))
-  CategoryNames <- names(categories[categories == TRUE])
+  CategoryNames <- classify_cols(full_data)$cat
 
   data <- full_data[full_data$TRIAL == TRIAL, ]
   RowIDs <- unique(data$ROW)

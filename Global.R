@@ -28,3 +28,4 @@ plan(multisession)
 m <- 15000
 
 COMMON_COL_NAMES <- c("TRIAL", "ROW", "N", "MEAN", "SD",  "ROUND_MEAN", "ROUND_OBSERVATION")
+COLS_CONTINUOUS <- c("N", "MEAN", "SD")

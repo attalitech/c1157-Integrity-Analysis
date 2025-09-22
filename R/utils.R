@@ -26,7 +26,7 @@ is_category <- function(x) {
   # Remove NAs first for efficiency, then check if all values are integers
 
   # If there are no na values, then it can't be a category
-  if (sum(is.na(x)) == 0)
+  if (!any(is.na(x)))
     return(FALSE)
 
   # If the vector is empty after removing NAs then it is not a category
