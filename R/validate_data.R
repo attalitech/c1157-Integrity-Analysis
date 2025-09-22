@@ -18,7 +18,7 @@ validate_data <- function(raw_data) {
     data <- finalize_data(data, column_types)
     data
   }, error = function(err) {
-    stop(err$message)
+    outputComments(err$message)
     NULL
   })
 }
@@ -86,7 +86,7 @@ validate_cols <- function(data) {
   }
 
   if (length(missing_cols) > 0) {
-    stop("Missing required columns:", toString(missing_cols))
+    stop("Missing required columns: ", toString(missing_cols))
   }
 
   data
