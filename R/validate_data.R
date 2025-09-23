@@ -139,38 +139,39 @@ classify_cols <- function(data) {
 
 #' Validate that each row contains either categorical or continuous data, not both
 validate_row_consistency <- function(data, cols_category) {
-  errors_found <- FALSE
+  # Rows that have any categorical columns
+  rows_categorical <- rowSums(!is.na(data[, cols_category, drop = FALSE])) > 0
+  # Rows that have any continuous columns
+  rows_continuous <- rowSums(!is.na(data[, COLS_CONTINUOUS])) > 0
+  # Rows that have both categorical and continuous columns
+  rows_mixed <- rows_categorical & rows_continuous
+  # Rows that have continuous but not categorical columns
+  rows_continuous_only <- !rows_categorical & rows_continuous
+  # Rows that don't have any missing data in continuous columns, and no categorical columns
+  rows_continuous_only_not_full <- rows_continuous_only & rowSums(is.na(data[, COLS_CONTINUOUS])) > 0
 
-  for (i in seq_len(nrow(data))) {
-    has_categorical_data <- any(!is.na(data[i, cols_category, drop = FALSE]))
-    has_continuous_data <- any(!is.na(data[i, COLS_CONTINUOUS]))
+  data$ROUND_MEAN[rows_categorical] <- NA
+  data$ROUND_OBSERVATION[rows_categorical] <- NA
 
-    if (has_categorical_data) {
-      # Row has categorical data - continuous columns should be NA
-      data$ROUND_MEAN[i] <- NA
-      data$ROUND_OBSERVATION[i] <- NA
-
-      if (has_continuous_data) {
-        report_mixed_data_error(data, i)
-        errors_found <- TRUE
-      }
-    } else {
-      # Row should have complete continuous data
-      if (any(is.na(data[i, COLS_CONTINUOUS]))) {
-        report_missing_continuous_error(data, i)
-        errors_found <- TRUE
-      }
-
-      # Fix MEAN decimal places
-      if (!is.na(data$MEAN[i]) && data$MEAN[i] != as.integer(data$MEAN[i])) {
-        digits <- nchar(sub("^.*\\.", "", as.character(data$MEAN[i])))
-        if (data$ROUND_MEAN[i] < digits) {
-          data$ROUND_MEAN[i] <- digits
-        }
-      }
-    }
+  # Fix MEAN decimal places
+  has_decimals <- rows_continuous_only & !is.na(data$MEAN) & data$MEAN != floor(data$MEAN)
+  decimal_idx <- which(has_decimals)
+  if (length(decimal_idx) > 0) {
+    digits <- nchar(sub("^.*\\.", "", as.character(data$MEAN[decimal_idx])))
+    needs_update <- data$ROUND_MEAN[decimal_idx] < digits
+    update_indices <- decimal_idx[needs_update]
+    data$ROUND_MEAN[update_indices] <- digits[needs_update]
   }
 
+  errors_found <- FALSE
+  if (sum(rows_mixed) > 0) {
+    errors_found <- TRUE
+    report_mixed_data_error(data, which(rows_mixed))
+  }
+  if (sum(rows_continuous_only_not_full) > 0) {
+    errors_found <- TRUE
+    report_missing_continuous_error(data, which(rows_continuous_only_not_full))
+  }
   if (errors_found) {
     stop("There are errors in the data table. Please review the above messages.")
   }
@@ -179,30 +180,36 @@ validate_row_consistency <- function(data, cols_category) {
 }
 
 report_mixed_data_error <- function(data, row_idx) {
-  outputComments("Please look at line", row_idx + 1)
-  outputComments("This appears to be a category. However, it has entries for continuous variables.")
+  lapply(row_idx, function(idx) {
+    outputComments("Please look at line", idx + 1)
+    outputComments("This appears to be a category. However, it has entries for continuous variables.")
 
-  messages <- lapply(COLS_CONTINUOUS, function(col) {
-    val <- data[row_idx, col]
-    if (!is.na(val)) {
-      paste(col, "=", val)
-    }
+    messages <- lapply(COLS_CONTINUOUS, function(col) {
+      val <- data[idx, col]
+      if (!is.na(val)) {
+        paste(col, "=", val)
+      }
+    })
+
+    outputComments("Specifically:", toString(unlist(messages)))
   })
-
-  outputComments("Specifically:", toString(unlist(messages)))
+  invisible()
 }
 
 report_missing_continuous_error <- function(data, row_idx) {
-  outputComments("Please look at line", row_idx + 1)
-  outputComments("This appears to be a continuous variable. However, it has NA entries for required fields.")
+  lapply(row_idx, function(idx) {
+    outputComments("Please look at line", idx + 1)
+    outputComments("This appears to be a continuous variable. However, it has NA entries for required fields.")
 
-  messages <- lapply(COLS_CONTINUOUS, function(col) {
-    val <- data[row_idx, col]
-    if (is.na(val)) {
-      paste(col, "= NA")
-    }
+    messages <- lapply(COLS_CONTINUOUS, function(col) {
+      val <- data[idx, col]
+      if (is.na(val)) {
+        paste(col, "= NA")
+      }
+    })
+    outputComments("Specifically:", toString(unlist(messages)))
   })
-  outputComments("Specifically:", toString(unlist(messages)))
+  invisible()
 }
 
 #' Final data formatting: order columns, sort rows, report summary

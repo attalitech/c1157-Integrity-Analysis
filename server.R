@@ -51,7 +51,7 @@ function(input, output, session) {
       # Not sure which is correct
       with(registerDoFuture(), local = TRUE)
 
-      outputComments("Execution time", round(Sys.time() - start_time, 2))
+      outputComments("Execution time", round(Sys.time() - start_time, 2), "seconds")
       analysisDone(TRUE)
     }
   )
