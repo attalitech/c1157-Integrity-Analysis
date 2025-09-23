@@ -1,7 +1,4 @@
 function(input, output, session) {
-  analysisDone <- reactiveVal(FALSE)
-  analysisOutput <- reactiveVal()
-
   stopImplicitCluster()
   #  cores <- detectCores() - 1  # Use one less than available cores
   #  cluster <- makeCluster(cores)
@@ -17,49 +14,9 @@ function(input, output, session) {
   # Register the comments log with this user's session, to use outside the server
   session$userData$commentsLog <- commentsLog
 
-  ###########################################################
-  # Processing Loop                                         #
-  ###########################################################
-
-  observeEvent(
-    {
-      input$analyze
-    },
-    {
-      progress <- shiny::Progress$new(session, style = "notification")
-      on.exit(progress$close())
-      data <- data_validated()
-      start_time <- Sys.time()
-      progress$set(message = "Processing Trial:", value = 0)
-      cores <- detectCores() - 1
-      registerDoParallel(cores)
-      trials <- unique(data$TRIAL)
-      LengthTrials <- length(trials)
-      result <- NULL
-      for (i in 1:LengthTrials)
-      {
-        TRIAL <- trials[i]
-        result <- rbind(
-          result,
-          P_Calc(data, TRIAL)
-        )
-        progress$set(
-          value = i / LengthTrials,
-          detail = paste0(" ",TRIAL, "P = ",result$PLE[nrow(result)-1]))
-      }
-      analysisOutput(result)
-      # Not sure which is correct
-      with(registerDoFuture(), local = TRUE)
-
-      outputComments("Execution time", round(Sys.time() - start_time, 2), "seconds")
-      analysisDone(TRUE)
-    }
-  )
-
   raw_data <- reactive({
     req(input$upload)
 
-    analysisDone(FALSE)
     commentsLog(NULL)
 
     result <- tryCatch({
@@ -78,13 +35,41 @@ function(input, output, session) {
 
   observeEvent(data_validated(), ignoreNULL = FALSE, {
     shinyjs::toggle("analyze", condition = !is.null(data_validated()))
+    shinyjs::hide("download_results")
   })
 
-  observeEvent(analysisDone(), {
-    if (analysisDone()) {
-      shinyjs::hide("analyze")
+  analysis_result <- eventReactive(input$analyze, {
+    progress <- shiny::Progress$new(session, style = "notification")
+    on.exit(progress$close())
+    data <- data_validated()
+    start_time <- Sys.time()
+    progress$set(message = "Processing Trial:", value = 0)
+    cores <- detectCores() - 1
+    registerDoParallel(cores)
+    trials <- unique(data$TRIAL)
+    LengthTrials <- length(trials)
+    result <- NULL
+    for (i in 1:LengthTrials)
+    {
+      TRIAL <- trials[i]
+      result <- rbind(
+        result,
+        P_Calc(data, TRIAL)
+      )
+      progress$set(
+        value = i / LengthTrials,
+        detail = paste0(" ",TRIAL, "P = ",result$PLE[nrow(result)-1]))
     }
-    shinyjs::toggle("download_results", condition = analysisDone())
+    # Not sure which is correct
+    with(registerDoFuture(), local = TRUE)
+
+    outputComments("Execution time", round(Sys.time() - start_time, 2), "seconds")
+    result
+  })
+
+  observeEvent(analysis_result(), {
+    shinyjs::hide("analyze")
+    shinyjs::show("download_results")
   })
 
   output$download_results <- downloadHandler(
@@ -92,7 +77,7 @@ function(input, output, session) {
       paste0("Integrity Analysis.",format(Sys.time(), format = "%y%m%d-%H%M%S"), ".xlsx")
     },
     content = function(file) {
-      x <- analysisOutput()
+      x <- analysis_result()
       names(x) <- c("TRIAL", "ROW", "Fraction <=", "Fraction >=")
       openxlsx::write.xlsx(x, file)
     }
