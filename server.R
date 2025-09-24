@@ -45,12 +45,23 @@ function(input, output, session) {
       detail = "Setting up ...",
       value = 0, {
         p <- progressr::progressor(along = trials)
-        results <- lapply(trials, function(trial) {
+
+        process_function <- function(trial) {
           trial_data <- data[data$TRIAL == trial, ]
           result <- P_Calc(trial_data, CategoryNames)
           p(paste0(trial, " (P = ", result$PLE[nrow(result) - 1], ")"))
           result
-        })
+        }
+
+        func_name <- lapply
+        func_args <- list(X = trials, FUN = process_function)
+
+        if (RUN_PARALLEL) {
+          func_name <- future.apply::future_lapply
+          func_args$future.seed <- TRUE
+        }
+
+        results <- do.call(func_name, func_args)
       }
     )
     results <- do.call(rbind, results)

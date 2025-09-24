@@ -19,7 +19,25 @@ library(doFuture)
 #library(BiocManager)
 #BiocManager::install("multtest")
 
-plan(multisession, workers = parallelly::availableCores(omit = 1))
+RUN_PARALLEL <- FALSE
+
+if (RUN_PARALLEL) {
+  calculate_workers <- function() {
+    total_cores <- parallelly::availableCores()
+
+    if (total_cores <= 2) {
+      return(1)
+    } else if (total_cores <= 4) {
+      return(total_cores - 1)
+    } else if (total_cores <= 8) {
+      return(total_cores - 2)
+    } else {
+      return(ceiling(total_cores * 0.6))
+    }
+  }
+
+  plan(multisession, workers = calculate_workers())
+}
 
 # replication number for the Monte Carlo simulation
 MONTE_CARLO_SIM_REPS <- 15000
