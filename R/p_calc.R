@@ -1,17 +1,13 @@
 # Primary Statistical Function for Monte Carlo Simulation
-P_Calc <- function(full_data, TRIAL)
+P_Calc <- function(trial_data, CategoryNames)
 {
-  CategoryNames <- classify_cols(full_data)$cat
-
-  data <- full_data[full_data$TRIAL == TRIAL, ]
+  data <- trial_data
+  TRIAL <- trial_data$TRIAL[1]
   RowIDs <- unique(data$ROW)
 
   x <- foreach(
     j = 1:length(RowIDs),
     .combine = rbind
-    #  .options.future = list(seed = TRUE)
-    #.export = c("CategoryNames", "MONTE_CARLO_SIM_REPS"),
-    #.packages = c("Rfast", "dqrng")
   ) %do%
     {
       Row <- RowIDs[j]
@@ -99,7 +95,6 @@ P_Calc <- function(full_data, TRIAL)
         PLE = "Only 1 Row"
         PGE = NA
       }
-
       c(as.character(Row), PLE, PGE)
     } %seed% TRUE
 
@@ -117,10 +112,10 @@ P_Calc <- function(full_data, TRIAL)
   x <- as.data.frame(x)
   names(x) <- c("TRIAL", "ROW", "PLE", "PGE")
   cat("Row IDs", RowIDs, "\n")
-  print(x)
+  #print(x)
   cat("match results", match(x$ROW, RowIDs), "\n")
   x <- x[match(x$ROW, RowIDs),]
-  print(x)
+  #print(x)
 
   PLEvalues <- as.numeric(x$PLE)
   PGEvalues <- as.numeric(x$PGE)

@@ -1,8 +1,4 @@
 function(input, output, session) {
-  stopImplicitCluster()
-  #  cores <- detectCores() - 1  # Use one less than available cores
-  #  cluster <- makeCluster(cores)
-  #  registerDoParallel(cluster)
 
   commentsLog <- reactiveVal(NULL)
   output$logContent <- renderUI({
@@ -40,28 +36,25 @@ function(input, output, session) {
 
   analysis_result <- eventReactive(input$analyze, {
     progress <- shiny::Progress$new(session, style = "notification")
+    progress$set(message = "Processing Trial:", value = 0)
     on.exit(progress$close())
+
     data <- data_validated()
     start_time <- Sys.time()
-    progress$set(message = "Processing Trial:", value = 0)
-    cores <- detectCores() - 1
-    registerDoParallel(cores)
     trials <- unique(data$TRIAL)
     LengthTrials <- length(trials)
-    result <- NULL
-    for (i in 1:LengthTrials)
-    {
-      TRIAL <- trials[i]
-      result <- rbind(
-        result,
-        P_Calc(data, TRIAL)
-      )
+    CategoryNames <- classify_cols(data)$cat
+    result_list <- lapply(seq(LengthTrials), function(idx) {
+      trial <- trials[idx]
+      trial_data <- data[data$TRIAL == trial, ]
+      result <- P_Calc(trial_data, CategoryNames)
       progress$set(
-        value = i / LengthTrials,
-        detail = paste0(" ",TRIAL, "P = ",result$PLE[nrow(result)-1]))
-    }
-    # Not sure which is correct
-    with(registerDoFuture(), local = TRUE)
+        value = idx / LengthTrials,
+        detail = paste0(" ", trial, "P = ", result$PLE[nrow(result)-1])
+      )
+      result
+    })
+    result <- do.call(rbind, result_list)
 
     outputComments("Execution time", round(Sys.time() - start_time, 2), "seconds")
     result
