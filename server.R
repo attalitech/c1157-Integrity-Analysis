@@ -35,29 +35,38 @@ function(input, output, session) {
   })
 
   analysis_result <- eventReactive(input$analyze, {
-    progress <- shiny::Progress$new(session, style = "notification")
-    progress$set(message = "Processing Trial:", value = 0)
-    on.exit(progress$close())
-
     data <- data_validated()
     start_time <- Sys.time()
     trials <- unique(data$TRIAL)
-    LengthTrials <- length(trials)
     CategoryNames <- classify_cols(data)$cat
-    result_list <- lapply(seq(LengthTrials), function(idx) {
-      trial <- trials[idx]
-      trial_data <- data[data$TRIAL == trial, ]
-      result <- P_Calc(trial_data, CategoryNames)
-      progress$set(
-        value = idx / LengthTrials,
-        detail = paste0(" ", trial, "P = ", result$PLE[nrow(result)-1])
-      )
-      result
-    })
-    result <- do.call(rbind, result_list)
 
-    outputComments("Execution time", round(Sys.time() - start_time, 2), "seconds")
-    result
+    progressr::withProgressShiny(
+      message = "Processing",
+      detail = "Setting up ...",
+      value = 0, {
+        p <- progressr::progressor(along = trials)
+        results <- lapply(trials, function(trial) {
+          trial_data <- data[data$TRIAL == trial, ]
+          result <- P_Calc(trial_data, CategoryNames)
+          p(paste0(trial, " (P = ", result$PLE[nrow(result) - 1], ")"))
+          result
+        })
+      }
+    )
+    results <- do.call(rbind, results)
+
+    outputComments(
+      paste0(
+        "Trial ",
+        unique(na.omit(results$TRIAL)),
+        ": p = ",
+        results$PLE[results$ROW == "Summary" & !is.na(results$ROW)],
+        collapse = "<br>"
+      )
+    )
+
+    outputComments("Execution time", round(as.integer(Sys.time()) - as.integer(start_time), 2), "seconds")
+    results
   })
 
   observeEvent(analysis_result(), {

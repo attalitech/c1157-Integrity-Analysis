@@ -147,8 +147,5 @@ P_Calc <- function(trial_data, CategoryNames)
   )
 
   x <- rbind(x, lastline)
-  outputComments(
-    paste0("Trial ", TRIAL,": p = ", PLE, "\n")
-  )
   return(x)
 }
